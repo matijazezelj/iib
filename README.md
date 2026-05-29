@@ -1,27 +1,34 @@
-# IIB — Incident in a Box
+# IIB — Identity in a Box
 
-One `docker compose up` for self-hosted incident management. Part of the **in-a-box-tools** ecosystem.
+One `make up` for self-hosted identity and access management. Part of the **in-a-box-tools** ecosystem.
 
 ```
-docker compose up -d
+make up
 ```
 
 Brings up:
-- **iib-manager** — FastAPI REST API + webhook receivers (port 8080)
+- **Authentik** — IdP with OIDC, SAML, LDAP, SCIM, MFA, SSO (ports 9080/9443)
+- **iib-monitor** — polls Authentik API and pushes metrics to VictoriaMetrics
 - **VictoriaMetrics** — time-series metrics storage (port 8432)
-- **Grafana** — pre-built overview dashboard (port 3004, admin / CHANGE_ME)
+- **Grafana** — pre-built identity overview dashboard (port 3004)
 
 ---
 
 ## Quick start
 
 ```bash
-cp .env.example .env
-# Edit .env — at minimum set GRAFANA_ADMIN_PASSWORD
-docker compose up -d
+make up
+# Secrets are auto-generated on first run — no manual .env editing required
 ```
 
-Open Grafana at http://localhost:3004 — the IIB Overview dashboard loads automatically.
+On first run `make` will:
+1. Copy `.env.example` → `.env`
+2. Generate `AUTHENTIK_SECRET_KEY`, `AUTHENTIK_BOOTSTRAP_TOKEN`, and `POSTGRES_PASSWORD`
+3. Start all services
+
+Open Authentik at http://localhost:9080 — log in with the credentials from `.env` (`AUTHENTIK_BOOTSTRAP_EMAIL` / `AUTHENTIK_BOOTSTRAP_PASSWORD`).
+
+Open Grafana at http://localhost:3004 — the IIB Overview dashboard loads automatically (admin / your `GRAFANA_ADMIN_PASSWORD`).
 
 ---
 
@@ -29,107 +36,53 @@ Open Grafana at http://localhost:3004 — the IIB Overview dashboard loads autom
 
 | Service | Host port | Container port | Default |
 |---------|-----------|----------------|---------|
-| iib-manager (API) | `API_PORT` | 8080 | 8080 |
+| Authentik HTTP | `AUTHENTIK_PORT_HTTP` | 9000 | 9080 |
+| Authentik HTTPS | `AUTHENTIK_PORT_HTTPS` | 9443 | 9443 |
 | VictoriaMetrics | `VICTORIAMETRICS_PORT` | 8428 | 8432 |
 | Grafana | `GRAFANA_PORT` | 3000 | 3004 |
 
 ---
 
-## API endpoints
+## Configuration
 
-| Method | Path | Description |
-|--------|------|-------------|
-| `POST` | `/api/v1/incidents` | Create incident |
-| `GET` | `/api/v1/incidents` | List incidents (optional `?status=open&severity=P1`) |
-| `GET` | `/api/v1/incidents/{id}` | Get single incident |
-| `PATCH` | `/api/v1/incidents/{id}` | Partial update (title, severity, status, assignee, notes, affected_services) |
-| `POST` | `/api/v1/incidents/{id}/timeline` | Add timeline event |
-| `GET` | `/api/v1/incidents/{id}/timeline` | Get timeline events |
-| `POST` | `/api/v1/webhooks/alertmanager` | Alertmanager v2 webhook receiver |
-| `POST` | `/api/v1/webhooks/gatus` | Gatus webhook receiver |
-| `GET` | `/metrics` | Prometheus scrape endpoint |
-| `GET` | `/health` | Liveness check |
+Edit `.env` before first run (or regenerate with `make generate-secrets`):
 
----
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `GRAFANA_ADMIN_PASSWORD` | `CHANGE_ME` | Grafana admin password |
+| `AUTHENTIK_BOOTSTRAP_EMAIL` | `admin@localhost` | Initial admin email |
+| `AUTHENTIK_BOOTSTRAP_PASSWORD` | `CHANGE_ME` | Initial admin password |
+| `SYNC_INTERVAL_MINUTES` | `15` | How often the monitor polls Authentik |
+| `LOOKBACK_HOURS` | `24` | Window for login event counts |
+| `VICTORIAMETRICS_RETENTION` | `90d` | Metric retention period |
 
-## Incident model
+Auto-generated on first run (do not set manually):
 
-```json
-{
-  "id": "INC-0001",
-  "title": "Database latency spike",
-  "severity": "P2",
-  "status": "investigating",
-  "source": "alertmanager",
-  "source_id": "abc123fingerprint",
-  "affected_services": ["postgres", "api"],
-  "assignee": "matija",
-  "notes": "Checking slow query log",
-  "created_at": "2024-01-15T09:00:00Z",
-  "updated_at": "2024-01-15T09:05:00Z",
-  "resolved_at": null
-}
-```
-
-**Severity:** `P1` (critical) | `P2` (high) | `P3` (medium) | `P4` (low/info)
-
-**Status:** `open` → `investigating` → `resolved` → `closed`
-
----
-
-## Webhook integrations
-
-### Alertmanager
-
-Point Alertmanager's webhook receiver at `http://iib-manager:8080/api/v1/webhooks/alertmanager`.
-
-```yaml
-# alertmanager.yml
-receivers:
-  - name: iib
-    webhook_configs:
-      - url: http://iib-manager:8080/api/v1/webhooks/alertmanager
-```
-
-- Firing alerts create incidents (deduplicated by `fingerprint`).
-- Severity mapping: `critical→P1`, `warning/high→P2`, `info→P4`, else `P3`.
-- Resolved alerts auto-close the matching incident.
-
-### Gatus
-
-Point Gatus alert endpoints at `http://iib-manager:8080/api/v1/webhooks/gatus`.
-
-```yaml
-# gatus.yml
-alerting:
-  custom:
-    url: http://iib-manager:8080/api/v1/webhooks/gatus
-    method: POST
-    body: |
-      {
-        "success": "[ALERT_TRIGGERED]" != "true",
-        "service": {"name": "[SERVICE_NAME]"}
-      }
-```
-
-- `success: false` creates a P2 incident "Service down: {name}".
-- `success: true` resolves any open incident for that service.
-
-### SIB (Status in a Box)
-
-Send webhooks with `source: "sib"` via the manual `POST /api/v1/incidents` endpoint or integrate directly.
+| Variable | Description |
+|----------|-------------|
+| `AUTHENTIK_SECRET_KEY` | Django signing key |
+| `AUTHENTIK_BOOTSTRAP_TOKEN` | API token for the monitor |
+| `POSTGRES_PASSWORD` | PostgreSQL password |
 
 ---
 
 ## Metrics
 
-Pushed to VictoriaMetrics after every write operation and exposed at `GET /metrics` for scraping.
+Collected by `iib-monitor` and pushed to VictoriaMetrics every `SYNC_INTERVAL_MINUTES`.
 
 | Metric | Labels | Description |
 |--------|--------|-------------|
-| `iib_incidents_total` | `status`, `severity` | All incidents by status + severity |
-| `iib_open_incidents` | `severity` | Currently open/investigating |
-| `iib_mttr_seconds` | `severity` | Avg resolution time, resolved incidents last 30d |
+| `iib_users_total` | — | All users |
+| `iib_users_active` | — | Active users |
+| `iib_users_superuser` | — | Superuser accounts |
+| `iib_logins_total` | `window` | Successful logins in lookback window |
+| `iib_login_failures_total` | `window` | Failed logins in lookback window |
+| `iib_password_changes_total` | `window` | Password set events in lookback window |
+| `iib_applications_total` | — | Configured applications |
+| `iib_providers_total` | — | Configured providers |
+| `iib_groups_total` | — | Groups |
+| `iib_outpost_healthy` | `name`, `type` | Outpost health (1=healthy, 0=unhealthy) |
+| `iib_last_sync_timestamp` | — | Unix ms timestamp of last successful sync |
 
 ---
 
@@ -137,18 +90,32 @@ Pushed to VictoriaMetrics after every write operation and exposed at `GET /metri
 
 The **IIB Overview** dashboard (`uid: iib-overview`) is provisioned automatically. Panels:
 
-1. Open P1 incidents (red if > 0)
-2. Open P2 incidents (orange if > 0)
-3. Open P3/P4 incidents
-4. Avg MTTR last 30d (minutes)
-5. Total incidents count
-6. Incident count by severity over time (stacked)
-7. Open incidents over time (by severity)
-8. Open incidents table (severity breakdown)
-9. MTTR by severity (minutes, time series)
-10. Incidents by status (stacked)
+1. Total Users
+2. Active Users
+3. Logins (24h window)
+4. Login Failures (red if > 0)
+5. Applications count
+6. Providers count
+7. Last Sync timestamp
+8. Groups count
+9. Login Events Over Time (logins + failures)
+10. User Count Over Time (total + active)
+11. Outpost Health table (Healthy/Unhealthy)
 
-Template variable `severity` allows filtering all panels by P1/P2/P3/P4 or All.
+---
+
+## Makefile targets
+
+| Target | Description |
+|--------|-------------|
+| `make up` | Start all services (generates secrets on first run) |
+| `make down` | Stop all services |
+| `make restart` | Restart all services |
+| `make build` | Rebuild monitor image |
+| `make logs` | Follow all service logs |
+| `make generate-secrets` | Re-run secret generation (skips if already set) |
+| `make sync-now` | Trigger an immediate metrics sync |
+| `make clean` | Stop services and remove all volumes |
 
 ---
 
@@ -156,6 +123,9 @@ Template variable `severity` allows filtering all panels by P1/P2/P3/P4 or All.
 
 | Volume | Contents |
 |--------|----------|
-| `iib-data` | SQLite database (`/data/iib.db`) |
+| `postgres-data` | Authentik PostgreSQL database |
+| `redis-data` | Authentik Redis state |
+| `authentik-media` | Uploaded media (avatars, branding) |
+| `authentik-templates` | Custom email/UI templates |
 | `victoriametrics-data` | VictoriaMetrics TSDB (90d default retention) |
 | `grafana-data` | Grafana state, user preferences |

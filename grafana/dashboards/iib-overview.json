@@ -28,7 +28,7 @@
       }
     ]
   },
-  "description": "IIB — Incident in a Box overview dashboard",
+  "description": "IIB — Identity in a Box overview dashboard (Authentik)",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
@@ -38,8 +38,113 @@
     {
       "id": 1,
       "type": "stat",
-      "title": "Open P1 Incidents",
+      "title": "Total Users",
       "gridPos": { "h": 4, "w": 4, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "iib-vm" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "fixedColor": "blue", "mode": "fixed" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "blue", "value": null }]
+          },
+          "unit": "short",
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "iib-vm" },
+          "expr": "iib_users_total",
+          "legendFormat": "Total",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Active Users",
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "iib-vm" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "fixedColor": "green", "mode": "fixed" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "green", "value": null }]
+          },
+          "unit": "short",
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "iib-vm" },
+          "expr": "iib_users_active",
+          "legendFormat": "Active",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Logins (24h)",
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "iib-vm" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "fixedColor": "semi-dark-blue", "mode": "fixed" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "semi-dark-blue", "value": null }]
+          },
+          "unit": "short",
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "iib-vm" },
+          "expr": "iib_logins_total",
+          "legendFormat": "Logins",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Login Failures (24h)",
+      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 0 },
       "datasource": { "type": "prometheus", "uid": "iib-vm" },
       "fieldConfig": {
         "defaults": {
@@ -61,145 +166,14 @@
         "graphMode": "none",
         "justifyMode": "center",
         "orientation": "auto",
-        "reduceOptions": {
-          "calcs": ["lastNotNull"],
-          "fields": "",
-          "values": false
-        },
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
         "textMode": "auto"
       },
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "iib-vm" },
-          "expr": "sum(iib_open_incidents{severity=\"P1\"}) or vector(0)",
-          "legendFormat": "P1 Open",
-          "refId": "A"
-        }
-      ]
-    },
-    {
-      "id": 2,
-      "type": "stat",
-      "title": "Open P2 Incidents",
-      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 0 },
-      "datasource": { "type": "prometheus", "uid": "iib-vm" },
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "thresholds" },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": null },
-              { "color": "orange", "value": 1 }
-            ]
-          },
-          "unit": "short",
-          "mappings": []
-        },
-        "overrides": []
-      },
-      "options": {
-        "colorMode": "background",
-        "graphMode": "none",
-        "justifyMode": "center",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": ["lastNotNull"],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "auto"
-      },
-      "targets": [
-        {
-          "datasource": { "type": "prometheus", "uid": "iib-vm" },
-          "expr": "sum(iib_open_incidents{severity=\"P2\"}) or vector(0)",
-          "legendFormat": "P2 Open",
-          "refId": "A"
-        }
-      ]
-    },
-    {
-      "id": 3,
-      "type": "stat",
-      "title": "Open P3/P4 Incidents",
-      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 0 },
-      "datasource": { "type": "prometheus", "uid": "iib-vm" },
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "thresholds" },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 1 }
-            ]
-          },
-          "unit": "short",
-          "mappings": []
-        },
-        "overrides": []
-      },
-      "options": {
-        "colorMode": "background",
-        "graphMode": "none",
-        "justifyMode": "center",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": ["lastNotNull"],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "auto"
-      },
-      "targets": [
-        {
-          "datasource": { "type": "prometheus", "uid": "iib-vm" },
-          "expr": "sum(iib_open_incidents{severity=~\"P3|P4\"}) or vector(0)",
-          "legendFormat": "P3/P4 Open",
-          "refId": "A"
-        }
-      ]
-    },
-    {
-      "id": 4,
-      "type": "stat",
-      "title": "Avg MTTR last 30d (minutes)",
-      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 0 },
-      "datasource": { "type": "prometheus", "uid": "iib-vm" },
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "thresholds" },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 60 },
-              { "color": "red", "value": 240 }
-            ]
-          },
-          "unit": "m",
-          "mappings": []
-        },
-        "overrides": []
-      },
-      "options": {
-        "colorMode": "value",
-        "graphMode": "none",
-        "justifyMode": "center",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": ["lastNotNull"],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "auto"
-      },
-      "targets": [
-        {
-          "datasource": { "type": "prometheus", "uid": "iib-vm" },
-          "expr": "avg(iib_mttr_seconds) / 60 or vector(0)",
-          "legendFormat": "MTTR (min)",
+          "expr": "iib_login_failures_total",
+          "legendFormat": "Failures",
           "refId": "A"
         }
       ]
@@ -207,17 +181,15 @@
     {
       "id": 5,
       "type": "stat",
-      "title": "Total Incidents",
+      "title": "Applications",
       "gridPos": { "h": 4, "w": 4, "x": 16, "y": 0 },
       "datasource": { "type": "prometheus", "uid": "iib-vm" },
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "palette-classic" },
+          "color": { "fixedColor": "purple", "mode": "fixed" },
           "thresholds": {
             "mode": "absolute",
-            "steps": [
-              { "color": "blue", "value": null }
-            ]
+            "steps": [{ "color": "purple", "value": null }]
           },
           "unit": "short",
           "mappings": []
@@ -229,75 +201,130 @@
         "graphMode": "none",
         "justifyMode": "center",
         "orientation": "auto",
-        "reduceOptions": {
-          "calcs": ["lastNotNull"],
-          "fields": "",
-          "values": false
-        },
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
         "textMode": "auto"
       },
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "iib-vm" },
-          "expr": "sum(iib_incidents_total) or vector(0)",
-          "legendFormat": "Total",
+          "expr": "iib_applications_total",
+          "legendFormat": "Apps",
           "refId": "A"
         }
       ]
     },
     {
       "id": 6,
-      "type": "timeseries",
-      "title": "Incident Count by Severity (stacked)",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "type": "stat",
+      "title": "Providers",
+      "gridPos": { "h": 4, "w": 4, "x": 20, "y": 0 },
       "datasource": { "type": "prometheus", "uid": "iib-vm" },
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "palette-classic" },
-          "custom": {
-            "fillOpacity": 50,
-            "lineWidth": 2,
-            "stacking": { "group": "A", "mode": "normal" }
+          "color": { "fixedColor": "semi-dark-purple", "mode": "fixed" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "semi-dark-purple", "value": null }]
           },
-          "unit": "short"
+          "unit": "short",
+          "mappings": []
         },
-        "overrides": [
-          {
-            "matcher": { "id": "byName", "options": "P1" },
-            "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }]
-          },
-          {
-            "matcher": { "id": "byName", "options": "P2" },
-            "properties": [{ "id": "color", "value": { "fixedColor": "orange", "mode": "fixed" } }]
-          },
-          {
-            "matcher": { "id": "byName", "options": "P3" },
-            "properties": [{ "id": "color", "value": { "fixedColor": "yellow", "mode": "fixed" } }]
-          },
-          {
-            "matcher": { "id": "byName", "options": "P4" },
-            "properties": [{ "id": "color", "value": { "fixedColor": "blue", "mode": "fixed" } }]
-          }
-        ]
+        "overrides": []
       },
       "options": {
-        "legend": { "calcs": ["sum"], "displayMode": "table", "placement": "bottom" },
-        "tooltip": { "mode": "multi", "sort": "desc" }
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
       },
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "iib-vm" },
-          "expr": "sum by (severity) (iib_incidents_total{severity=~\"$severity\"})",
-          "legendFormat": "{{severity}}",
+          "expr": "iib_providers_total",
+          "legendFormat": "Providers",
           "refId": "A"
         }
       ]
     },
     {
       "id": 7,
+      "type": "stat",
+      "title": "Last Sync",
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 4 },
+      "datasource": { "type": "prometheus", "uid": "iib-vm" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          },
+          "unit": "dateTimeAsLocal",
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "iib-vm" },
+          "expr": "iib_last_sync_timestamp / 1000",
+          "legendFormat": "Last Sync",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "type": "stat",
+      "title": "Groups",
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 4 },
+      "datasource": { "type": "prometheus", "uid": "iib-vm" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "fixedColor": "light-blue", "mode": "fixed" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "light-blue", "value": null }]
+          },
+          "unit": "short",
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "iib-vm" },
+          "expr": "iib_groups_total",
+          "legendFormat": "Groups",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 9,
       "type": "timeseries",
-      "title": "Open Incidents Over Time",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "title": "Login Events Over Time",
+      "gridPos": { "h": 8, "w": 14, "x": 8, "y": 4 },
       "datasource": { "type": "prometheus", "uid": "iib-vm" },
       "fieldConfig": {
         "defaults": {
@@ -308,7 +335,61 @@
           },
           "unit": "short"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "Failures" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Logins" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }]
+          }
+        ]
+      },
+      "options": {
+        "legend": { "calcs": ["lastNotNull", "max"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "iib-vm" },
+          "expr": "iib_logins_total",
+          "legendFormat": "Logins",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "iib-vm" },
+          "expr": "iib_login_failures_total",
+          "legendFormat": "Failures",
+          "refId": "B"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "User Count Over Time",
+      "gridPos": { "h": 8, "w": 10, "x": 0, "y": 12 },
+      "datasource": { "type": "prometheus", "uid": "iib-vm" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "fillOpacity": 15,
+            "lineWidth": 2
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "Total" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "blue", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Active" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }]
+          }
+        ]
       },
       "options": {
         "legend": { "calcs": ["lastNotNull"], "displayMode": "table", "placement": "bottom" },
@@ -317,17 +398,23 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "iib-vm" },
-          "expr": "sum by (severity) (iib_open_incidents{severity=~\"$severity\"})",
-          "legendFormat": "{{severity}}",
+          "expr": "iib_users_total",
+          "legendFormat": "Total",
           "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "iib-vm" },
+          "expr": "iib_users_active",
+          "legendFormat": "Active",
+          "refId": "B"
         }
       ]
     },
     {
-      "id": 8,
+      "id": 11,
       "type": "table",
-      "title": "Open Incidents by Severity",
-      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 12 },
+      "title": "Outpost Health",
+      "gridPos": { "h": 8, "w": 14, "x": 10, "y": 12 },
       "datasource": { "type": "prometheus", "uid": "iib-vm" },
       "fieldConfig": {
         "defaults": {
@@ -340,8 +427,9 @@
         },
         "overrides": [
           {
-            "matcher": { "id": "byName", "options": "severity" },
+            "matcher": { "id": "byName", "options": "Value" },
             "properties": [
+              { "id": "displayName", "value": "Status" },
               {
                 "id": "custom.displayMode",
                 "value": "color-background"
@@ -349,18 +437,10 @@
               {
                 "id": "mappings",
                 "value": [
-                  { "options": { "P1": { "color": "red", "index": 0 } }, "type": "value" },
-                  { "options": { "P2": { "color": "orange", "index": 1 } }, "type": "value" },
-                  { "options": { "P3": { "color": "yellow", "index": 2 } }, "type": "value" },
-                  { "options": { "P4": { "color": "blue", "index": 3 } }, "type": "value" }
+                  { "options": { "0": { "color": "red", "index": 0, "text": "Unhealthy" } }, "type": "value" },
+                  { "options": { "1": { "color": "green", "index": 1, "text": "Healthy" } }, "type": "value" }
                 ]
               }
-            ]
-          },
-          {
-            "matcher": { "id": "byName", "options": "Value" },
-            "properties": [
-              { "id": "displayName", "value": "Open Count" }
             ]
           }
         ]
@@ -368,14 +448,14 @@
       "options": {
         "footer": { "show": false },
         "showHeader": true,
-        "sortBy": [{ "desc": true, "displayName": "severity" }]
+        "sortBy": [{ "desc": false, "displayName": "Value" }]
       },
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "iib-vm" },
-          "expr": "iib_open_incidents{severity=~\"$severity\"}",
+          "expr": "iib_outpost_healthy",
           "instant": true,
-          "legendFormat": "{{severity}}",
+          "legendFormat": "{{name}}",
           "refId": "A",
           "format": "table"
         }
@@ -391,107 +471,23 @@
               "job": true
             },
             "renameByName": {
-              "severity": "Severity",
-              "Value": "Open Count"
+              "name": "Name",
+              "type": "Type",
+              "Value": "Status"
             }
           }
-        }
-      ]
-    },
-    {
-      "id": 9,
-      "type": "timeseries",
-      "title": "MTTR by Severity (last 30d, minutes)",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 20 },
-      "datasource": { "type": "prometheus", "uid": "iib-vm" },
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "palette-classic" },
-          "custom": {
-            "fillOpacity": 10,
-            "lineWidth": 2
-          },
-          "unit": "m"
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": { "calcs": ["lastNotNull", "mean"], "displayMode": "table", "placement": "bottom" },
-        "tooltip": { "mode": "multi", "sort": "none" }
-      },
-      "targets": [
-        {
-          "datasource": { "type": "prometheus", "uid": "iib-vm" },
-          "expr": "iib_mttr_seconds{severity=~\"$severity\"} / 60",
-          "legendFormat": "MTTR {{severity}}",
-          "refId": "A"
-        }
-      ]
-    },
-    {
-      "id": 10,
-      "type": "timeseries",
-      "title": "Incidents by Status",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 20 },
-      "datasource": { "type": "prometheus", "uid": "iib-vm" },
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "palette-classic" },
-          "custom": {
-            "fillOpacity": 30,
-            "lineWidth": 2,
-            "stacking": { "group": "A", "mode": "normal" }
-          },
-          "unit": "short"
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": { "calcs": ["lastNotNull"], "displayMode": "table", "placement": "bottom" },
-        "tooltip": { "mode": "multi", "sort": "desc" }
-      },
-      "targets": [
-        {
-          "datasource": { "type": "prometheus", "uid": "iib-vm" },
-          "expr": "sum by (status) (iib_incidents_total)",
-          "legendFormat": "{{status}}",
-          "refId": "A"
         }
       ]
     }
   ],
   "refresh": "1m",
   "schemaVersion": 38,
-  "tags": ["iib", "incidents"],
-  "templating": {
-    "list": [
-      {
-        "current": {
-          "selected": true,
-          "text": "All",
-          "value": "P1|P2|P3|P4"
-        },
-        "hide": 0,
-        "includeAll": true,
-        "allValue": "P1|P2|P3|P4",
-        "label": "Severity",
-        "multi": true,
-        "name": "severity",
-        "options": [
-          { "selected": false, "text": "P1", "value": "P1" },
-          { "selected": false, "text": "P2", "value": "P2" },
-          { "selected": false, "text": "P3", "value": "P3" },
-          { "selected": false, "text": "P4", "value": "P4" }
-        ],
-        "query": "P1,P2,P3,P4",
-        "type": "custom"
-      }
-    ]
-  },
+  "tags": ["iib", "identity", "authentik"],
+  "templating": { "list": [] },
   "time": { "from": "now-24h", "to": "now" },
   "timepicker": {},
   "timezone": "browser",
-  "title": "IIB — Incident Overview",
+  "title": "IIB — Identity Overview",
   "uid": "iib-overview",
   "version": 1
 }

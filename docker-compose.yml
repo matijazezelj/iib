@@ -1,35 +1,111 @@
-version: "3.9"
-
-networks:
-  iib:
-    name: iib
-
-volumes:
-  iib-data:
-  victoriametrics-data:
-  grafana-data:
-
 services:
 
-  iib-manager:
-    build: ./manager
-    container_name: iib-manager
+  iib-postgresql:
+    image: docker.io/library/postgres:16-alpine
+    container_name: iib-postgresql
     restart: unless-stopped
-    ports:
-      - "${API_PORT:-8080}:8080"
-    volumes:
-      - iib-data:/data
     environment:
-      VICTORIAMETRICS_URL: http://iib-victoriametrics:8428
-    depends_on:
-      - iib-victoriametrics
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_USER: authentik
+      POSTGRES_DB: authentik
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
     networks:
       - iib
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8080/health"]
-      interval: 30s
+      test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
+      interval: 10s
       timeout: 5s
-      retries: 3
+      retries: 5
+
+  iib-redis:
+    image: docker.io/library/redis:alpine
+    container_name: iib-redis
+    restart: unless-stopped
+    command: --save 60 1 --loglevel warning
+    volumes:
+      - redis-data:/data
+    networks:
+      - iib
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  iib-server:
+    image: ghcr.io/goauthentik/server:latest
+    container_name: iib-server
+    restart: unless-stopped
+    command: server
+    ports:
+      - "${AUTHENTIK_PORT_HTTP:-9080}:9000"
+      - "${AUTHENTIK_PORT_HTTPS:-9443}:9443"
+    environment:
+      AUTHENTIK_REDIS__HOST: iib-redis
+      AUTHENTIK_POSTGRESQL__HOST: iib-postgresql
+      AUTHENTIK_POSTGRESQL__USER: authentik
+      AUTHENTIK_POSTGRESQL__NAME: authentik
+      AUTHENTIK_POSTGRESQL__PASSWORD: ${POSTGRES_PASSWORD}
+      AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY}
+      AUTHENTIK_BOOTSTRAP_EMAIL: ${AUTHENTIK_BOOTSTRAP_EMAIL:-admin@localhost}
+      AUTHENTIK_BOOTSTRAP_PASSWORD: ${AUTHENTIK_BOOTSTRAP_PASSWORD}
+      AUTHENTIK_BOOTSTRAP_TOKEN: ${AUTHENTIK_BOOTSTRAP_TOKEN}
+      AUTHENTIK_ERROR_REPORTING__ENABLED: "false"
+      AUTHENTIK_LOG_LEVEL: warning
+    volumes:
+      - authentik-media:/media
+      - authentik-templates:/templates
+    networks:
+      - iib
+    depends_on:
+      iib-postgresql:
+        condition: service_healthy
+      iib-redis:
+        condition: service_healthy
+
+  iib-worker:
+    image: ghcr.io/goauthentik/server:latest
+    container_name: iib-worker
+    restart: unless-stopped
+    command: worker
+    environment:
+      AUTHENTIK_REDIS__HOST: iib-redis
+      AUTHENTIK_POSTGRESQL__HOST: iib-postgresql
+      AUTHENTIK_POSTGRESQL__USER: authentik
+      AUTHENTIK_POSTGRESQL__NAME: authentik
+      AUTHENTIK_POSTGRESQL__PASSWORD: ${POSTGRES_PASSWORD}
+      AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY}
+      AUTHENTIK_ERROR_REPORTING__ENABLED: "false"
+      AUTHENTIK_LOG_LEVEL: warning
+    volumes:
+      - authentik-media:/media
+      - authentik-templates:/templates
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - iib
+    depends_on:
+      iib-postgresql:
+        condition: service_healthy
+      iib-redis:
+        condition: service_healthy
+
+  iib-monitor:
+    build: ./monitor
+    container_name: iib-monitor
+    restart: unless-stopped
+    environment:
+      - AUTHENTIK_URL=${AUTHENTIK_URL:-http://iib-server:9000}
+      - AUTHENTIK_TOKEN=${AUTHENTIK_BOOTSTRAP_TOKEN}
+      - VICTORIAMETRICS_URL=${VICTORIAMETRICS_URL:-http://iib-victoriametrics:8428}
+      - SYNC_INTERVAL_MINUTES=${SYNC_INTERVAL_MINUTES:-15}
+      - SYNC_ON_STARTUP=${SYNC_ON_STARTUP:-true}
+      - LOOKBACK_HOURS=${LOOKBACK_HOURS:-24}
+    networks:
+      - iib
+    depends_on:
+      - iib-server
+      - iib-victoriametrics
 
   iib-victoriametrics:
     image: victoriametrics/victoria-metrics:stable
@@ -38,10 +114,11 @@ services:
     ports:
       - "${VICTORIAMETRICS_PORT:-8432}:8428"
     volumes:
-      - victoriametrics-data:/victoria-metrics-data
+      - victoriametrics-data:/storage
     command:
-      - "--retentionPeriod=${VICTORIAMETRICS_RETENTION:-90d}"
-      - "--httpListenAddr=:8428"
+      - --storageDataPath=/storage
+      - --retentionPeriod=${VICTORIAMETRICS_RETENTION:-90d}
+      - --httpListenAddr=:8428
     networks:
       - iib
 
@@ -51,16 +128,28 @@ services:
     restart: unless-stopped
     ports:
       - "${GRAFANA_PORT:-3004}:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-changeme}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH=/etc/grafana/dashboards/iib-overview.json
     volumes:
       - grafana-data:/var/lib/grafana
-      - ./grafana/provisioning:/etc/grafana/provisioning
-      - ./grafana/dashboards:/etc/grafana/dashboards
-    environment:
-      GF_SECURITY_ADMIN_PASSWORD: "${GRAFANA_ADMIN_PASSWORD:-CHANGE_ME}"
-      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /etc/grafana/dashboards/iib-overview.json
-      GF_SERVER_ROOT_URL: "%(protocol)s://%(domain)s:%(http_port)s/"
-      GF_ANALYTICS_REPORTING_ENABLED: "false"
-    depends_on:
-      - iib-victoriametrics
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/etc/grafana/dashboards:ro
     networks:
       - iib
+    depends_on:
+      - iib-victoriametrics
+
+networks:
+  iib:
+    name: iib
+
+volumes:
+  postgres-data:
+  redis-data:
+  authentik-media:
+  authentik-templates:
+  victoriametrics-data:
+  grafana-data:

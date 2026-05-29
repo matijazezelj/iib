@@ -2,22 +2,20 @@
 
 ## v0.2
 
-- **On-call rotation** — PagerDuty-style schedules with primary/secondary responders; auto-assign incidents based on rotation
-- **Slack notifications** — alert on new P1/P2 incidents, status changes, and unacknowledged incidents after N minutes
-- **SIB auto-create** — bidirectional integration with Status in a Box; SIB status page degradations automatically open IIB incidents
+- **SCIM provisioning metrics** — track SCIM sync events and errors per connected directory
+- **MFA adoption dashboard** — breakdown of users with/without MFA enrolled, by MFA type
+- **Application login heatmap** — which apps are being accessed most, by user group
 
 ## v0.3
 
-- **Post-mortem templates** — auto-generate post-mortem documents for resolved P1/P2 incidents; exportable as Markdown
-- **SLA reporting** — configurable SLA thresholds per severity; track SLA breach rate; weekly digest
-- **Escalation policies** — auto-escalate unacknowledged P1 incidents after configurable timeout
+- **Alert rules** — Grafana alert rules for login failure spikes, outpost going unhealthy, inactive admin accounts
+- **SIB integration** — publish Authentik status to Status in a Box status page
+- **PIB integration** — detect certificates nearing expiry in Authentik TLS config and surface in PIB
 
 ## Backlog
 
-- Multi-user auth (API keys / JWT)
-- PagerDuty webhook receiver
-- OpsGenie webhook receiver
-- Email notifications
-- Incident tagging and search
-- Bulk status updates
-- Prometheus AlertManager integration improvements (grouping, inhibition awareness)
+- Geo-IP enrichment for login events (map of login origins)
+- Failed login source tracking (IP-level brute force detection)
+- User lifecycle audit log (created, deactivated, deleted over time)
+- LDAP bind error metrics
+- Token expiry tracking
