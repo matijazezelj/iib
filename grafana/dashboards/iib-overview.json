@@ -64,7 +64,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "iib-vm" },
-          "expr": "iib_users_total",
+          "expr": "last_over_time(iib_users_total[8h])",
           "legendFormat": "Total",
           "refId": "A"
         }
@@ -99,7 +99,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "iib-vm" },
-          "expr": "iib_users_active",
+          "expr": "last_over_time(iib_users_active[8h])",
           "legendFormat": "Active",
           "refId": "A"
         }
@@ -134,7 +134,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "iib-vm" },
-          "expr": "iib_logins_total",
+          "expr": "last_over_time(iib_logins_total[8h])",
           "legendFormat": "Logins",
           "refId": "A"
         }
@@ -172,7 +172,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "iib-vm" },
-          "expr": "iib_login_failures_total",
+          "expr": "last_over_time(iib_login_failures_total[8h])",
           "legendFormat": "Failures",
           "refId": "A"
         }
@@ -207,7 +207,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "iib-vm" },
-          "expr": "iib_applications_total",
+          "expr": "last_over_time(iib_applications_total[8h])",
           "legendFormat": "Apps",
           "refId": "A"
         }
@@ -242,7 +242,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "iib-vm" },
-          "expr": "iib_providers_total",
+          "expr": "last_over_time(iib_providers_total[8h])",
           "legendFormat": "Providers",
           "refId": "A"
         }
@@ -314,7 +314,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "iib-vm" },
-          "expr": "iib_groups_total",
+          "expr": "last_over_time(iib_groups_total[8h])",
           "legendFormat": "Groups",
           "refId": "A"
         }
@@ -453,7 +453,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "iib-vm" },
-          "expr": "iib_outpost_healthy",
+          "expr": "last_over_time(iib_outpost_healthy[8h])",
           "instant": true,
           "legendFormat": "{{name}}",
           "refId": "A",
