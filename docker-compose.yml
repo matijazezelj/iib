@@ -9,7 +9,7 @@ services:
       POSTGRES_USER: authentik
       POSTGRES_DB: authentik
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      - iib-postgres-data:/var/lib/postgresql/data
     networks:
       - iib
     healthcheck:
@@ -24,7 +24,7 @@ services:
     restart: unless-stopped
     command: --save 60 1 --loglevel warning
     volumes:
-      - redis-data:/data
+      - iib-redis-data:/data
     networks:
       - iib
     healthcheck:
@@ -54,8 +54,8 @@ services:
       AUTHENTIK_ERROR_REPORTING__ENABLED: "false"
       AUTHENTIK_LOG_LEVEL: warning
     volumes:
-      - authentik-media:/media
-      - authentik-templates:/templates
+      - iib-authentik-media:/media
+      - iib-authentik-templates:/templates
     networks:
       - iib
     depends_on:
@@ -79,8 +79,8 @@ services:
       AUTHENTIK_ERROR_REPORTING__ENABLED: "false"
       AUTHENTIK_LOG_LEVEL: warning
     volumes:
-      - authentik-media:/media
-      - authentik-templates:/templates
+      - iib-authentik-media:/media
+      - iib-authentik-templates:/templates
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - iib
@@ -108,13 +108,13 @@ services:
       - iib-victoriametrics
 
   iib-victoriametrics:
-    image: victoriametrics/victoria-metrics:stable
+    image: victoriametrics/victoria-metrics:latest
     container_name: iib-victoriametrics
     restart: unless-stopped
     ports:
       - "${VICTORIAMETRICS_PORT:-8432}:8428"
     volumes:
-      - victoriametrics-data:/storage
+      - iib-victoriametrics-data:/storage
     command:
       - --storageDataPath=/storage
       - --retentionPeriod=${VICTORIAMETRICS_RETENTION:-90d}
@@ -134,7 +134,7 @@ services:
       - GF_USERS_ALLOW_SIGN_UP=false
       - GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH=/etc/grafana/dashboards/iib-overview.json
     volumes:
-      - grafana-data:/var/lib/grafana
+      - iib-grafana-data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
       - ./grafana/dashboards:/etc/grafana/dashboards:ro
     networks:
@@ -147,9 +147,9 @@ networks:
     name: iib
 
 volumes:
-  postgres-data:
-  redis-data:
-  authentik-media:
-  authentik-templates:
-  victoriametrics-data:
-  grafana-data:
+  iib-postgres-data:
+  iib-redis-data:
+  iib-authentik-media:
+  iib-authentik-templates:
+  iib-victoriametrics-data:
+  iib-grafana-data:
