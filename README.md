@@ -2,6 +2,8 @@
 
 One `make up` for self-hosted identity and access management. Part of the **in-a-box-tools** ecosystem.
 
+![Dashboard preview](docs/dashboard-preview.png)
+
 ```
 make up
 ```
@@ -123,9 +125,28 @@ The **IIB Overview** dashboard (`uid: iib-overview`) is provisioned automaticall
 
 | Volume | Contents |
 |--------|----------|
-| `postgres-data` | Authentik PostgreSQL database |
-| `redis-data` | Authentik Redis state |
-| `authentik-media` | Uploaded media (avatars, branding) |
-| `authentik-templates` | Custom email/UI templates |
-| `victoriametrics-data` | VictoriaMetrics TSDB (90d default retention) |
-| `grafana-data` | Grafana state, user preferences |
+| `iib-postgres-data` | Authentik PostgreSQL database |
+| `iib-redis-data` | Authentik Redis state |
+| `iib-authentik-media` | Uploaded media (avatars, branding) |
+| `iib-authentik-templates` | Custom email/UI templates |
+| `iib-victoriametrics-data` | VictoriaMetrics TSDB (90d default retention) |
+| `iib-grafana-data` | Grafana state, user preferences |
+
+---
+
+## In-a-box ecosystem
+
+| Tool | What it does |
+|------|-------------|
+| [VIB](https://github.com/matijazezelj/vib) | Vulnerability in a Box — CVE scanning |
+| [TIB](https://github.com/matijazezelj/tib) | Threat Intelligence in a Box — KEV + EPSS |
+| [CIB](https://github.com/matijazezelj/cib) | Compliance in a Box — policy + license + EOL |
+| **IIB** | **Identity in a Box** |
+| [PIB](https://github.com/matijazezelj/pib) | PKI in a Box — internal CA + cert expiry monitor |
+| [XIB](https://github.com/matijazezelj/xib) | Security in a Box — unified umbrella dashboard |
+
+---
+
+## License
+
+MIT
