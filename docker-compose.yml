@@ -39,8 +39,8 @@ services:
     restart: unless-stopped
     command: server
     ports:
-      - "${AUTHENTIK_PORT_HTTP:-9080}:9000"
-      - "${AUTHENTIK_PORT_HTTPS:-9443}:9443"
+      - "${BIND_ADDR:-127.0.0.1}:${AUTHENTIK_PORT_HTTP:-9080}:9000"
+      - "${BIND_ADDR:-127.0.0.1}:${AUTHENTIK_PORT_HTTPS:-9443}:9443"
     environment:
       AUTHENTIK_REDIS__HOST: iib-redis
       AUTHENTIK_POSTGRESQL__HOST: iib-postgresql
@@ -112,7 +112,7 @@ services:
     container_name: iib-victoriametrics
     restart: unless-stopped
     ports:
-      - "${VICTORIAMETRICS_PORT:-8432}:8428"
+      - "${BIND_ADDR:-127.0.0.1}:${VICTORIAMETRICS_PORT:-8432}:8428"
     volumes:
       - iib-victoriametrics-data:/storage
     command:
@@ -127,7 +127,7 @@ services:
     container_name: iib-grafana
     restart: unless-stopped
     ports:
-      - "${GRAFANA_PORT:-3004}:3000"
+      - "${BIND_ADDR:-127.0.0.1}:${GRAFANA_PORT:-3004}:3000"
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-changeme}
