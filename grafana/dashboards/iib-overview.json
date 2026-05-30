@@ -279,7 +279,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "iib-vm" },
-          "expr": "iib_last_sync_timestamp / 1000",
+          "expr": "last_over_time(iib_last_sync_timestamp[8h])",
           "legendFormat": "Last Sync",
           "refId": "A"
         }
