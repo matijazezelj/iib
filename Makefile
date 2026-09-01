@@ -20,11 +20,18 @@ generate-secrets:
 		echo "Creating .env from .env.example..."; \
 		cp .env.example .env; \
 	fi
-	@if grep -q "GENERATE_ME" .env; then \
+	@if grep -qE "^[A-Z_]+=GENERATE_ME$$" .env; then \
 		echo "Generating secrets..."; \
-		sed -i "s|AUTHENTIK_SECRET_KEY=GENERATE_ME|AUTHENTIK_SECRET_KEY=$$(openssl rand -base64 50 | tr -d '\n')|" .env; \
-		sed -i "s|AUTHENTIK_BOOTSTRAP_TOKEN=GENERATE_ME|AUTHENTIK_BOOTSTRAP_TOKEN=$$(openssl rand -hex 32)|" .env; \
-		sed -i "s|POSTGRES_PASSWORD=GENERATE_ME|POSTGRES_PASSWORD=$$(openssl rand -hex 24)|" .env; \
+		tmp=$$(mktemp); \
+		sed -e "s|AUTHENTIK_SECRET_KEY=GENERATE_ME|AUTHENTIK_SECRET_KEY=$$(openssl rand -base64 50 | tr -d '\n')|" \
+		    -e "s|AUTHENTIK_BOOTSTRAP_TOKEN=GENERATE_ME|AUTHENTIK_BOOTSTRAP_TOKEN=$$(openssl rand -hex 32)|" \
+		    -e "s|POSTGRES_PASSWORD=GENERATE_ME|POSTGRES_PASSWORD=$$(openssl rand -hex 24)|" \
+		    .env > "$$tmp" && cat "$$tmp" > .env; \
+		rm -f "$$tmp"; \
+		if grep -qE "^[A-Z_]+=GENERATE_ME$$" .env; then \
+			echo "ERROR: secret generation failed, .env still has GENERATE_ME" >&2; \
+			exit 1; \
+		fi; \
 		echo "Secrets generated."; \
 	fi
 
