@@ -119,7 +119,9 @@ def collect_metrics() -> dict:
 # ── Metrics push ──────────────────────────────────────────────────────────────
 
 def _safe_label(s: str) -> str:
-    return str(s).replace('"', '\\"').replace("\n", "").replace("\\", "\\\\")
+    # Backslash first: escaping quotes first would re-escape the backslash this
+    # step just added, and VictoriaMetrics drops the malformed line silently.
+    return str(s).replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n")
 
 
 def _ts_ms() -> int:
