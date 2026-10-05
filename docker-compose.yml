@@ -34,7 +34,7 @@ services:
       retries: 5
 
   iib-server:
-    image: ghcr.io/goauthentik/server:latest
+    image: ghcr.io/goauthentik/server:${AUTHENTIK_TAG:-2026.8.3}
     container_name: iib-server
     restart: unless-stopped
     command: server
@@ -46,11 +46,11 @@ services:
       AUTHENTIK_POSTGRESQL__HOST: iib-postgresql
       AUTHENTIK_POSTGRESQL__USER: authentik
       AUTHENTIK_POSTGRESQL__NAME: authentik
-      AUTHENTIK_POSTGRESQL__PASSWORD: ${POSTGRES_PASSWORD}
-      AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY}
+      AUTHENTIK_POSTGRESQL__PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is not set; run `make generate-secrets`}
+      AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY:?AUTHENTIK_SECRET_KEY is not set; run `make generate-secrets`}
       AUTHENTIK_BOOTSTRAP_EMAIL: ${AUTHENTIK_BOOTSTRAP_EMAIL:-admin@localhost}
-      AUTHENTIK_BOOTSTRAP_PASSWORD: ${AUTHENTIK_BOOTSTRAP_PASSWORD}
-      AUTHENTIK_BOOTSTRAP_TOKEN: ${AUTHENTIK_BOOTSTRAP_TOKEN}
+      AUTHENTIK_BOOTSTRAP_PASSWORD: ${AUTHENTIK_BOOTSTRAP_PASSWORD:?AUTHENTIK_BOOTSTRAP_PASSWORD is not set; run `make generate-secrets`}
+      AUTHENTIK_BOOTSTRAP_TOKEN: ${AUTHENTIK_BOOTSTRAP_TOKEN:?AUTHENTIK_BOOTSTRAP_TOKEN is not set; run `make generate-secrets`}
       AUTHENTIK_ERROR_REPORTING__ENABLED: "false"
       AUTHENTIK_LOG_LEVEL: warning
     volumes:
@@ -65,7 +65,7 @@ services:
         condition: service_healthy
 
   iib-worker:
-    image: ghcr.io/goauthentik/server:latest
+    image: ghcr.io/goauthentik/server:${AUTHENTIK_TAG:-2026.8.3}
     container_name: iib-worker
     restart: unless-stopped
     command: worker
@@ -74,14 +74,15 @@ services:
       AUTHENTIK_POSTGRESQL__HOST: iib-postgresql
       AUTHENTIK_POSTGRESQL__USER: authentik
       AUTHENTIK_POSTGRESQL__NAME: authentik
-      AUTHENTIK_POSTGRESQL__PASSWORD: ${POSTGRES_PASSWORD}
-      AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY}
+      AUTHENTIK_POSTGRESQL__PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is not set; run `make generate-secrets`}
+      AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY:?AUTHENTIK_SECRET_KEY is not set; run `make generate-secrets`}
       AUTHENTIK_ERROR_REPORTING__ENABLED: "false"
       AUTHENTIK_LOG_LEVEL: warning
     volumes:
       - iib-authentik-media:/media
       - iib-authentik-templates:/templates
-      - /var/run/docker.sock:/var/run/docker.sock
+      # No /var/run/docker.sock here: it would give the worker root on the host, and it is only
+      # needed for Authentik's Docker-outpost integration, which IIB does not use.
     networks:
       - iib
     depends_on:
@@ -108,7 +109,7 @@ services:
       - iib-victoriametrics
 
   iib-victoriametrics:
-    image: victoriametrics/victoria-metrics:latest
+    image: victoriametrics/victoria-metrics:${VICTORIAMETRICS_TAG:-v1.153.0}
     container_name: iib-victoriametrics
     restart: unless-stopped
     ports:
@@ -123,14 +124,14 @@ services:
       - iib
 
   iib-grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:${GRAFANA_TAG:-13.2.3}
     container_name: iib-grafana
     restart: unless-stopped
     ports:
       - "${BIND_ADDR:-127.0.0.1}:${GRAFANA_PORT:-3004}:3000"
     environment:
       - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-changeme}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD is not set; run `make generate-secrets`}
       - GF_USERS_ALLOW_SIGN_UP=false
       - GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH=/etc/grafana/dashboards/iib-overview.json
     volumes:

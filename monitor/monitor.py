@@ -36,13 +36,22 @@ SESSION = requests.Session()
 
 # ── Authentik API helpers ─────────────────────────────────────────────────────
 
+# Number of API calls that failed during the current collection. A failed call
+# used to return 0, so a broken token or URL showed "0 users, 0 logins" on the
+# dashboard, which looks like a quiet system rather than a blind monitor.
+_api_failures = 0
+
+
 def _api_get(path: str, params: dict | None = None) -> dict | None:
+    global _api_failures
     if not AUTHENTIK_TOKEN:
+        _api_failures += 1
         logger.warning("AUTHENTIK_TOKEN not set — skipping API call")
         return None
     try:
+        # Authentik's router requires the trailing slash; without it every call is a 404.
         r = SESSION.get(
-            f"{AUTHENTIK_URL}/api/v3/{path}",
+            f"{AUTHENTIK_URL}/api/v3/{path.rstrip('/')}/",
             headers=HEADERS,
             params=params,
             timeout=15,
@@ -50,9 +59,11 @@ def _api_get(path: str, params: dict | None = None) -> dict | None:
         r.raise_for_status()
         return r.json()
     except requests.exceptions.ConnectionError:
+        _api_failures += 1
         logger.warning("Cannot reach Authentik at %s — still starting up?", AUTHENTIK_URL)
         return None
     except Exception as e:
+        _api_failures += 1
         logger.warning("Authentik API error (%s): %s", path, e)
         return None
 
@@ -73,6 +84,8 @@ def _since_iso(hours: int) -> str:
 # ── Data collection ───────────────────────────────────────────────────────────
 
 def collect_metrics() -> dict:
+    global _api_failures
+    _api_failures = 0
     since = _since_iso(LOOKBACK_HOURS)
 
     users_total = _count("core/users")
@@ -87,7 +100,7 @@ def collect_metrics() -> dict:
     providers = _count("providers/all")
 
     # Outpost health
-    outposts_data = _api_get("outposts/outposts", {"ordering": "name"})
+    outposts_data = _api_get("outposts/instances", {"ordering": "name"})
     outposts = []
     if outposts_data:
         for o in outposts_data.get("results", []):
@@ -113,6 +126,7 @@ def collect_metrics() -> dict:
         "providers": providers,
         "groups": groups,
         "outposts": outposts,
+        "api_failures": _api_failures,
     }
 
 
@@ -141,6 +155,8 @@ def push_metrics(m: dict) -> None:
         f"iib_providers_total {m['providers']} {ts}",
         f"iib_groups_total {m['groups']} {ts}",
         f"iib_last_sync_timestamp {ts} {ts}",
+        # >0 means the counts above are not trustworthy (bad token, wrong URL, API change).
+        f"iib_api_failed_calls {m['api_failures']} {ts}",
     ]
 
     for o in m["outposts"]:
@@ -168,6 +184,8 @@ def run_sync() -> None:
     logger.info("─── IIB sync ───")
     m = collect_metrics()
     push_metrics(m)
+    if m["api_failures"]:
+        logger.error("%d Authentik API call(s) failed this cycle: the numbers below are NOT reliable", m["api_failures"])
     logger.info(
         "users=%d active=%d logins=%d failures=%d apps=%d",
         m["users_total"], m["users_active"],
